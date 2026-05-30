@@ -1,0 +1,18 @@
+{
+  "name": "DailyDraw with Penne",
+  "short_name": "DailyDraw",
+  "description": "Daily drawing practice with streaks and object prompts",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FFF3EC",
+  "theme_color": "#FF6B8A",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

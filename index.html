@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#FF6B8A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DailyDraw">
+<link rel="manifest" href="manifest.json">
+<title>DailyDraw with Penne</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#FFF3EC;--bg2:#FFE8D8;--card:#FFFFFF;
+  --rose:#FF6B8A;--salmon:#FFACA8;--peach:#FFDBBA;
+  --teal:#5CC4C4;--purple:#C387C2;--blue:#5EA8E6;--slate:#88AED2;
+  --txt:#3A1A08;--txt2:#8A5A3A;--txt3:#C09070;
+  --bdr:rgba(180,100,50,0.12);--bdr2:rgba(180,90,40,0.22);
+  --radius:14px;--radius-sm:10px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--txt)}
+body{display:flex;flex-direction:column}
+.app-header{flex-shrink:0;padding:calc(var(--safe-top) + 12px) 18px 11px;background:var(--bg);border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between}
+.header-left .h-title{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.header-left .h-sub{font-size:10px;color:var(--txt3);margin-top:1px}
+.header-right .h-pct{font-size:17px;font-weight:800;color:var(--rose);line-height:1}
+.header-right .h-lbl{font-size:9px;color:var(--txt3)}
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.scroll-area::-webkit-scrollbar{width:3px}
+.scroll-area::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
+.scroll-inner{padding:14px 16px calc(var(--safe-bottom) + 76px)}
+.bottom-nav{flex-shrink:0;display:flex;background:var(--card);border-top:1px solid var(--bdr);padding-bottom:var(--safe-bottom)}
+.bn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 6px;font-size:10px;color:var(--txt3);cursor:pointer;transition:color .15s;border:none;background:none;font-family:inherit}
+.bn.on{color:var(--rose)}
+.bn .icon{width:20px;height:20px}
+.sec-hd{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--txt3);margin:14px 0 8px;display:flex;align-items:center;gap:6px}
+.sec-hd::after{content:'';flex:1;height:1px;background:var(--bdr)}
+.streak-band{background:var(--rose);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;display:flex;align-items:flex-end;gap:12px;overflow:hidden;min-height:88px}
+.sb-left{flex:1}
+.sb-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.7);margin-bottom:3px}
+.sb-num{font-size:32px;font-weight:800;color:#fff;line-height:1}
+.fire{font-size:24px}
+.sb-sub{font-size:10px;color:rgba(255,255,255,0.75);margin-top:3px}
+.sb-penne{width:88px;height:88px;object-fit:contain;margin-bottom:-14px;margin-right:-6px;flex-shrink:0}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.stat-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius-sm);padding:10px 12px}
+.sv{font-size:22px;font-weight:800;line-height:1;margin-bottom:3px}
+.sl{font-size:9px;color:var(--txt3)}
+.btn-primary{width:100%;padding:14px;background:var(--rose);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:10px;font-family:inherit;transition:opacity .15s}
+.btn-primary:active{opacity:.85}
+.btn-secondary{flex:1;padding:12px;background:var(--card);color:var(--txt2);border:1.5px solid var(--bdr2);border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-family:inherit}
+.btn-secondary:active{background:var(--bg2)}
+.btn-ghost{width:100%;padding:10px;background:transparent;color:var(--txt3);border:1px solid var(--bdr);border-radius:var(--radius-sm);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-ghost:active{background:var(--bg2)}
+.nudge-card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:center;gap:10px}
+.nudge-penne{width:48px;height:48px;object-fit:contain;flex-shrink:0}
+.nudge-title{font-size:9px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.nudge-body{font-size:11px;color:var(--txt2)}
+.nudge-warn{font-size:11px;color:var(--salmon);font-weight:600;margin-top:3px}
+.nudge-good{font-size:11px;color:#3AACAC;font-weight:600;margin-top:3px}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.cat-tile{background:var(--card);border:1.5px solid var(--bdr);border-radius:var(--radius);padding:12px 10px;text-align:center;cursor:pointer;transition:all .15s}
+.cat-tile:active{transform:scale(0.97)}
+.cat-name{font-size:11px;font-weight:700;color:var(--txt);margin:5px 0 2px}
+.cat-count{font-size:9px;color:var(--txt3)}
+.icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.icon svg{width:100%;height:100%}
+.time-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.chip{padding:6px 12px;border-radius:20px;border:1px solid var(--bdr2);font-size:11px;font-weight:600;color:var(--txt2);background:var(--card);cursor:pointer;transition:all .15s}
+.chip.on{background:var(--rose);color:#fff;border-color:var(--rose)}
+.slider-row{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.s-edge{font-size:9px;color:var(--txt3)}
+.s-val{font-size:12px;font-weight:700;color:var(--rose);min-width:38px;text-align:center}
+input[type=range]{height:4px;border-radius:2px}
+.subject-card{border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;text-align:center}
+.subj-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,0.75);margin-bottom:5px}
+.subj-name{font-size:22px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:4px}
+.subj-cat{font-size:10px;color:rgba(255,255,255,0.8)}
+.session-mid{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.session-penne{width:80px;height:80px;object-fit:contain;flex-shrink:0}
+.timer-wrap{flex:1;display:flex;align-items:center;justify-content:center;position:relative}
+.timer-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.timer-num{font-size:26px;font-weight:800;line-height:1}
+.timer-sub{font-size:9px;color:var(--txt3);margin-top:2px}
+.count-row{display:flex;gap:8px;margin-bottom:10px}
+.count-card{flex:1;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius-sm);padding:8px;text-align:center}
+.cv{font-size:18px;font-weight:800;line-height:1;margin-bottom:2px}
+.cl{font-size:8px;color:var(--txt3)}
+.session-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0}
+.end-screen{text-align:center;padding:6px 0}
+.end-penne{width:110px;height:110px;object-fit:contain;margin:0 auto 8px;display:block}
+.end-title{font-size:18px;font-weight:800;color:var(--txt);margin-bottom:4px}
+.end-sub{font-size:11px;color:var(--txt3);margin-bottom:10px}
+.streak-badge{display:inline-flex;align-items:center;gap:5px;padding:6px 16px;background:var(--rose);color:#fff;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:12px}
+.end-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px}
+.end-stat{border-radius:var(--radius-sm);padding:10px 8px;border:1px solid var(--bdr)}
+.esv{font-size:16px;font-weight:800;line-height:1;margin-bottom:3px}
+.esl{font-size:8px;color:var(--txt3)}
+.drew-section{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--radius);padding:10px 12px;margin-bottom:12px;text-align:left}
+.drew-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--txt3);margin-bottom:6px}
+.drew-chips{display:flex;flex-wrap:wrap;gap:5px}
+.drew-chip{background:var(--card);border:1px solid var(--bdr);border-radius:8px;padding:4px 10px;font-size:10px;color:var(--txt2)}
+.drew-more{color:var(--txt3)}
+.history-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius-sm);margin-bottom:6px}
+.h-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.h-name{font-size:12px;color:var(--txt);flex:1}
+.h-cat{font-size:9px;color:var(--txt3)}
+.h-status{font-size:9px;color:var(--txt3)}
+.h-done{color:#3AACAC}
+.cat-stat-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.cat-bar-wrap{flex:1;height:5px;background:var(--bdr2);border-radius:3px;overflow:hidden}
+.cat-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+</style>
+</head>
+<body>
+<div class="app-header">
+  <div class="header-left">
+    <div class="h-title" id="headerTitle">DailyDraw</div>
+    <div class="h-sub" id="headerSub">with Penne ✏</div>
+  </div>
+  <div class="header-right" style="text-align:right">
+    <div class="h-pct" id="headerStreak">0</div>
+    <div class="h-lbl">day streak</div>
+  </div>
+</div>
+<div class="scroll-area"><div class="scroll-inner" id="mainContent"></div></div>
+<div class="bottom-nav">
+  <button class="bn on" data-view="home" onclick="showView('home')">
+    <span class="icon" style="width:20px;height:20px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12L12 3l9 9"/><path d="M5 10.5V19a1 1 0 001 1h4v-4h4v4h4a1 1 0 001-1v-8.5"/></svg></span>Home
+  </button>
+  <button class="bn" data-view="practice" onclick="showView('practice')">
+    <span class="icon" style="width:20px;height:20px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18 10l-4-4L4 20z"/><path d="M14 6l4 4"/></svg></span>Practice
+  </button>
+  <button class="bn" data-view="stats" onclick="showView('stats')">
+    <span class="icon" style="width:20px;height:20px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="7" width="4" height="14"/><rect x="17" y="3" width="4" height="18"/></svg></span>Stats
+  </button>
+</div>
+<script>
+const PENNE = {
+  p_thumbs:  './p_thumbs.png',
+  p_excited: './p_excited.png',
+  p_clock:   './p_clock.png',
+  p_draw:    './p_draw.png',
+  p_think:   './p_think.png',
+  p_magnify: './p_magnify.png',
+  p_pencil:  './p_pencil.png',
+  p_shy:     './p_shy.png',
+  p_wave:    './p_wave.png',
+};
+const OBJECTS = {
+  objects: [
+    {n:"Coffee mug",c:"Kitchen"},{n:"Glass bottle",c:"Kitchen"},{n:"Plastic bottle",c:"Kitchen"},
+    {n:"Toaster",c:"Kitchen"},{n:"Electric kettle",c:"Kitchen"},{n:"Blender",c:"Kitchen"},
+    {n:"Coffee machine",c:"Kitchen"},{n:"Microwave",c:"Kitchen"},{n:"Kitchen knife",c:"Kitchen"},
+    {n:"Cutting board",c:"Kitchen"},{n:"Teapot",c:"Kitchen"},{n:"Thermos flask",c:"Kitchen"},
+    {n:"Pressure cooker",c:"Kitchen"},{n:"Tiffin box",c:"Kitchen"},
+    {n:"Toothbrush",c:"Bathroom"},{n:"Soap dispenser",c:"Bathroom"},{n:"Shampoo bottle",c:"Bathroom"},
+    {n:"Perfume bottle",c:"Bathroom"},{n:"Hair brush",c:"Bathroom"},{n:"Shower head",c:"Bathroom"},
+    {n:"Tap / Faucet",c:"Bathroom"},{n:"Hand mirror",c:"Bathroom"},
+    {n:"Office chair",c:"Furniture"},{n:"Dining chair",c:"Furniture"},{n:"Study table",c:"Furniture"},
+    {n:"Desk lamp",c:"Furniture"},{n:"Bookshelf",c:"Furniture"},{n:"Sofa",c:"Furniture"},
+    {n:"Stool",c:"Furniture"},{n:"Door handle",c:"Furniture"},{n:"Vase",c:"Furniture"},
+    {n:"Pen / Pencil",c:"Stationery"},{n:"Stapler",c:"Stationery"},{n:"Scissors",c:"Stationery"},
+    {n:"Sharpener",c:"Stationery"},{n:"Eraser",c:"Stationery"},{n:"Ruler",c:"Stationery"},
+    {n:"Tape dispenser",c:"Stationery"},{n:"Calculator",c:"Stationery"},{n:"Notebook",c:"Stationery"},
+    {n:"Mobile phone",c:"Electronics"},{n:"Headphones",c:"Electronics"},{n:"Bluetooth speaker",c:"Electronics"},
+    {n:"Computer mouse",c:"Electronics"},{n:"Keyboard",c:"Electronics"},{n:"Remote control",c:"Electronics"},
+    {n:"Camera",c:"Electronics"},{n:"Laptop",c:"Electronics"},{n:"Tablet",c:"Electronics"},
+    {n:"Smartwatch",c:"Electronics"},{n:"Electric fan",c:"Electronics"},
+    {n:"Cordless drill",c:"Tools"},{n:"Hammer",c:"Tools"},{n:"Wrench",c:"Tools"},
+    {n:"Screwdriver",c:"Tools"},{n:"Flashlight",c:"Tools"},{n:"Bicycle pump",c:"Tools"},
+    {n:"Measuring tape",c:"Tools"},{n:"Pliers",c:"Tools"},
+    {n:"Dumbbell",c:"Sports"},{n:"Yoga mat",c:"Sports"},{n:"Cricket bat",c:"Sports"},
+    {n:"Badminton racket",c:"Sports"},{n:"Football",c:"Sports"},{n:"Running shoes",c:"Sports"},
+    {n:"Single door",c:"Architecture"},{n:"Bay window",c:"Architecture"},{n:"Spiral staircase",c:"Architecture"},
+    {n:"Park bench",c:"Architecture"},{n:"Street lamp",c:"Architecture"},{n:"Traffic light",c:"Architecture"},
+    {n:"Fire hydrant",c:"Architecture"},{n:"Phone booth",c:"Architecture"},
+    {n:"Bicycle",c:"Vehicles"},{n:"Motorcycle",c:"Vehicles"},{n:"Auto-rickshaw",c:"Vehicles"},
+    {n:"Car (sedan)",c:"Vehicles"},{n:"City bus",c:"Vehicles"},{n:"Helmet",c:"Vehicles"},
+    {n:"Train engine",c:"Vehicles"},{n:"Helicopter",c:"Vehicles"},{n:"Sailboat",c:"Vehicles"},
+  ],
+  people: [
+    {n:"Standing figure (front)",c:"Basic Pose"},{n:"Standing figure (side)",c:"Basic Pose"},
+    {n:"Walking figure",c:"Basic Pose"},{n:"Running figure",c:"Basic Pose"},
+    {n:"Sitting on chair",c:"Basic Pose"},{n:"Sitting cross-legged",c:"Basic Pose"},
+    {n:"Bending figure",c:"Basic Pose"},{n:"Jumping figure",c:"Basic Pose"},
+    {n:"Working at desk",c:"Action"},{n:"Cooking",c:"Action"},{n:"Reading a book",c:"Action"},
+    {n:"Using phone",c:"Action"},{n:"Writing",c:"Action"},{n:"Shopping",c:"Action"},
+    {n:"Cycling pose",c:"Action"},{n:"Playing sports",c:"Action"},{n:"Dancing",c:"Action"},
+    {n:"Toddler",c:"Age Group"},{n:"School-age child",c:"Age Group"},
+    {n:"Teenager",c:"Age Group"},{n:"Elderly person",c:"Age Group"},
+    {n:"Doctor / Nurse",c:"Profession"},{n:"Chef",c:"Profession"},
+    {n:"Construction worker",c:"Profession"},{n:"Street vendor",c:"Profession"},
+    {n:"Delivery person",c:"Profession"},{n:"Teacher",c:"Profession"},
+    {n:"Happy expression",c:"Expression"},{n:"Angry expression",c:"Expression"},
+    {n:"Surprised expression",c:"Expression"},{n:"Confused expression",c:"Expression"},
+    {n:"Open palm",c:"Hand"},{n:"Pointing hand",c:"Hand"},{n:"Thumbs up",c:"Hand"},
+    {n:"Praying / Namaste",c:"Hand"},{n:"Waving hand",c:"Hand"},
+    {n:"Two people shaking hands",c:"Interaction"},{n:"Parent and child",c:"Interaction"},
+    {n:"Friends chatting",c:"Interaction"},{n:"Teacher and student",c:"Interaction"},
+  ],
+  animals: [
+    {n:"Dog (sitting)",c:"Domestic"},{n:"Dog (running)",c:"Domestic"},
+    {n:"Cat (sitting)",c:"Domestic"},{n:"Cat (stretching)",c:"Domestic"},
+    {n:"Cow / Buffalo",c:"Domestic"},{n:"Horse",c:"Domestic"},
+    {n:"Goat",c:"Farm"},{n:"Chicken",c:"Farm"},
+    {n:"Elephant",c:"Wild"},{n:"Tiger",c:"Wild"},{n:"Lion",c:"Wild"},
+    {n:"Monkey",c:"Wild"},{n:"Deer",c:"Wild"},{n:"Rabbit",c:"Wild"},
+    {n:"Snake",c:"Wild"},{n:"Tortoise",c:"Wild"},
+    {n:"Sparrow",c:"Bird"},{n:"Crow",c:"Bird"},{n:"Pigeon",c:"Bird"},
+    {n:"Peacock (open)",c:"Bird"},{n:"Parrot",c:"Bird"},{n:"Eagle",c:"Bird"},
+    {n:"Butterfly",c:"Small"},{n:"Bee",c:"Small"},{n:"Fish",c:"Small"},{n:"Frog",c:"Small"},
+    {n:"Banyan tree",c:"Plant"},{n:"Coconut tree",c:"Plant"},{n:"Cactus",c:"Plant"},
+    {n:"Sunflower",c:"Plant"},{n:"Rose",c:"Plant"},{n:"Lotus",c:"Plant"},
+    {n:"Potted plant",c:"Plant"},{n:"Mushroom",c:"Plant"},
+  ],
+  scenes: [
+    {n:"Children's park",c:"Indoor"},{n:"Classroom interior",c:"Indoor"},
+    {n:"Living room",c:"Indoor"},{n:"Kitchen scene",c:"Indoor"},
+    {n:"Hospital waiting room",c:"Indoor"},{n:"Library",c:"Indoor"},
+    {n:"Restaurant / Cafe",c:"Indoor"},{n:"Office workspace",c:"Indoor"},
+    {n:"Vegetable market",c:"Outdoor"},{n:"Street scene",c:"Outdoor"},
+    {n:"Railway platform",c:"Outdoor"},{n:"Garden / Terrace",c:"Outdoor"},
+    {n:"Beach scene",c:"Outdoor"},{n:"Construction site",c:"Outdoor"},
+    {n:"Festival scene",c:"Outdoor"},{n:"Farm field",c:"Outdoor"},
+    {n:"Mountain range",c:"Nature"},{n:"Waterfall",c:"Nature"},
+    {n:"Beach / Seashore",c:"Nature"},{n:"Grass field",c:"Nature"},
+    {n:"River / Stream",c:"Nature"},
+  ],
+  food: [
+    {n:"Apple",c:"Fruit"},{n:"Banana",c:"Fruit"},{n:"Mango",c:"Fruit"},
+    {n:"Grapes (bunch)",c:"Fruit"},{n:"Watermelon (slice)",c:"Fruit"},
+    {n:"Pineapple",c:"Fruit"},{n:"Strawberry",c:"Fruit"},{n:"Pomegranate",c:"Fruit"},
+    {n:"Tomato",c:"Vegetable"},{n:"Carrot",c:"Vegetable"},{n:"Capsicum",c:"Vegetable"},
+    {n:"Corn",c:"Vegetable"},{n:"Cauliflower",c:"Vegetable"},{n:"Brinjal",c:"Vegetable"},
+    {n:"Roti / Chapati",c:"Prepared"},{n:"Samosa",c:"Prepared"},
+    {n:"Burger",c:"Prepared"},{n:"Pizza (slice)",c:"Prepared"},
+    {n:"Ice cream cone",c:"Prepared"},{n:"Sandwich",c:"Prepared"},
+    {n:"Soda can",c:"Packaging"},{n:"Glass jar",c:"Packaging"},
+    {n:"Tetra pack",c:"Packaging"},{n:"Salt shaker",c:"Packaging"},
+  ],
+  quick: [
+    {n:"Thumbs up",c:"Hand"},{n:"Peace sign",c:"Hand"},{n:"Pointing hand",c:"Hand"},
+    {n:"Waving hand",c:"Hand"},{n:"Fist",c:"Hand"},
+    {n:"Happy expression",c:"Expression"},{n:"Surprised expression",c:"Expression"},
+    {n:"Angry expression",c:"Expression"},{n:"Confused expression",c:"Expression"},
+    {n:"Apple",c:"Food"},{n:"Banana",c:"Food"},{n:"Mango",c:"Food"},
+    {n:"Mushroom",c:"Nature"},{n:"Butterfly",c:"Nature"},{n:"Bee",c:"Nature"},
+    {n:"Sparrow",c:"Bird"},{n:"Rabbit",c:"Animal"},{n:"Fish",c:"Animal"},
+    {n:"Coffee mug",c:"Object"},{n:"Eraser",c:"Object"},{n:"Scissors",c:"Object"},
+  ],
+};
+
+const ICONS = {"home": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 12L12 3l9 9\"/><path d=\"M5 10.5V19a1 1 0 001 1h4v-4h4v4h4a1 1 0 001-1v-8.5\"/></svg>", "pencil": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 20h4L18 10l-4-4L4 20z\"/><path d=\"M14 6l4 4\"/></svg>", "chart": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"12\" width=\"4\" height=\"9\"/><rect x=\"10\" y=\"7\" width=\"4\" height=\"14\"/><rect x=\"17\" y=\"3\" width=\"4\" height=\"18\"/></svg>", "armchair": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 11a2 2 0 00-2 2v4h18v-4a2 2 0 00-2-2\"/><path d=\"M5 11V7a3 3 0 013-3h8a3 3 0 013 3v4\"/><line x1=\"5\" y1=\"17\" x2=\"5\" y2=\"19\"/><line x1=\"19\" y1=\"17\" x2=\"19\" y2=\"19\"/><path d=\"M3 13a2 2 0 012-2h14a2 2 0 012 2\"/></svg>", "user": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"7\" r=\"4\"/><path d=\"M4 21v-1a7 7 0 0114 0v1\"/></svg>", "paw": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"11\" cy=\"4\" r=\"2\"/><circle cx=\"18\" cy=\"8\" r=\"2\"/><circle cx=\"20\" cy=\"15\" r=\"2\"/><path d=\"M9 10a5 5 0 015 5v3.5a3.5 3.5 0 01-7 0V15a5 5 0 012-5z\"/><circle cx=\"4\" cy=\"15\" r=\"2\"/></svg>", "building": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"4\" y=\"2\" width=\"16\" height=\"20\" rx=\"1\"/><path d=\"M9 22v-4h6v4\"/><path d=\"M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01\"/></svg>", "food": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2a7 7 0 00-7 7c0 4 3 6.5 4 9h6c1-2.5 4-5 4-9a7 7 0 00-7-7z\"/><line x1=\"8.5\" y1=\"18\" x2=\"15.5\" y2=\"18\"/><line x1=\"9\" y1=\"21\" x2=\"15\" y2=\"21\"/></svg>", "bolt": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M13 2L4.09 12.97A1 1 0 005 14.5h6L9 22l9.91-10.97A1 1 0 0018 9.5h-6z\"/></svg>", "refresh": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 4v6h6\"/><path d=\"M20 20v-6h-6\"/><path d=\"M20 10a8 8 0 00-14.93-2M4 14a8 8 0 0014.93 2\"/></svg>", "check": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12l5 5L19 7\"/></svg>", "skip": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14M14 6l6 6-6 6\"/></svg>"};
+
+function icon(name, size=20, color='currentColor') {
+  return `<span class="icon" style="width:${size}px;height:${size}px;color:${color}">${ICONS[name]||''}</span>`;
+}
+
+const CATS = [
+  {id:'objects', label:'Objects',  icon:'armchair', color:'#FF6B8A', bg:'#FFF0F3', count:OBJECTS.objects.length},
+  {id:'people',  label:'People',   icon:'user',     color:'#C387C2', bg:'#F8EFF8', count:OBJECTS.people.length},
+  {id:'animals', label:'Animals',  icon:'paw',      color:'#5CC4C4', bg:'#EDF7F7', count:OBJECTS.animals.length},
+  {id:'scenes',  label:'Scenes',   icon:'building', color:'#88AED2', bg:'#EDF4FC', count:OBJECTS.scenes.length},
+  {id:'food',    label:'Food',     icon:'food',     color:'#FFACA8', bg:'#FFF3EE', count:OBJECTS.food.length},
+  {id:'quick',   label:'Quick',    icon:'bolt',     color:'#E8A020', bg:'#FDF6EE', count:OBJECTS.quick.length},
+];
+
+const TIMES = [
+  {label:'30s',secs:30},{label:'1 min',secs:60},{label:'2 min',secs:120},
+  {label:'5 min',secs:300},{label:'10 min',secs:600},
+];
+
+// ── STATE ──
+const STATE_KEY = 'dd_v1';
+let state = {
+  streak:0, lastActiveDate:null, bestStreak:0,
+  totalDrawn:0, todayDrawn:0, lastTodayDate:null,
+  history:[], view:'home', session:null,
+};
+
+function todayStr() {
+  const d=new Date();
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function loadState() {
+  try { const s=localStorage.getItem(STATE_KEY); if(s) Object.assign(state,JSON.parse(s)); } catch(e){}
+  if(state.lastTodayDate!==todayStr()) { state.todayDrawn=0; state.lastTodayDate=todayStr(); }
+  if(state.lastActiveDate && state.lastActiveDate!==todayStr()) {
+    const diff=Math.round((new Date()-new Date(state.lastActiveDate.replace(/-/g,'/')))/86400000);
+    if(diff>1) state.streak=0;
+  }
+}
+
+function saveState() {
+  try { localStorage.setItem(STATE_KEY,JSON.stringify(state)); } catch(e){}
+}
+
+function updateStreak() {
+  if(state.todayDrawn<3) return;
+  const today=todayStr();
+  if(state.lastActiveDate===today) return;
+  if(!state.lastActiveDate) { state.streak=1; }
+  else {
+    const diff=Math.round((new Date()-new Date(state.lastActiveDate.replace(/-/g,'/')))/86400000);
+    state.streak = diff===1 ? state.streak+1 : 1;
+  }
+  if(state.streak>state.bestStreak) state.bestStreak=state.streak;
+  state.lastActiveDate=today;
+  saveState();
+}
+
+// ── TIMER ──
+let timerInterval=null;
+
+function startTimer() {
+  const s=state.session;
+  if(!s||s.done) return;
+  s.running=true;
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    if(!state.session||state.session.done){clearInterval(timerInterval);return;}
+    state.session.remaining--;
+    if(state.session.remaining<=0){
+      state.session.remaining=0;
+      clearInterval(timerInterval);
+      state.session.running=false;
+      if(navigator.vibrate) navigator.vibrate([150,80,150]);
+      renderSession(); return;
+    }
+    updateTimerDisplay();
+  },1000);
+  renderSession();
+}
+
+function pauseTimer() { clearInterval(timerInterval); state.session.running=false; renderSession(); }
+
+function updateTimerDisplay() {
+  const s=state.session; if(!s) return;
+  const m=Math.floor(s.remaining/60), sec=s.remaining%60;
+  const el=document.getElementById('timerDisplay');
+  if(el) el.textContent=m>0?`${m}:${String(sec).padStart(2,'0')}`:`0:${String(sec).padStart(2,'0')}`;
+  const ring=document.getElementById('timerRing');
+  if(ring) { const circ=2*Math.PI*38; ring.style.strokeDashoffset=circ*(1-s.remaining/s.secs); }
+  const wrap=document.getElementById('timerWrap');
+  if(wrap) wrap.style.color=s.remaining<=10?'#FF6B8A':'var(--txt)';
+}
+
+// ── SESSION ──
+function startSession(catId,secs) {
+  clearInterval(timerInterval);
+  const pool=OBJECTS[catId];
+  state.session={catId,secs,remaining:secs,current:pickRandom(pool,null),sessionDrawn:0,log:[],running:false,done:false};
+  saveState(); showView('session');
+}
+
+function pickRandom(pool,exclude) {
+  let item;
+  do { item=pool[Math.floor(Math.random()*pool.length)]; }
+  while(pool.length>1&&exclude&&item.n===exclude);
+  return item;
+}
+
+function markDone() {
+  const s=state.session; if(!s||s.done) return;
+  const obj=s.current;
+  s.log.push({name:obj.n,cat:obj.c,skipped:false});
+  s.sessionDrawn++; state.todayDrawn++; state.totalDrawn++;
+  state.history.unshift({name:obj.n,cat:obj.c,skipped:false,ts:Date.now()});
+  if(state.history.length>50) state.history.pop();
+  updateStreak();
+  s.current=pickRandom(OBJECTS[s.catId],obj.n);
+  s.remaining=s.secs;
+  clearInterval(timerInterval); s.running=false;
+  saveState(); renderSession(); startTimer();
+}
+
+function skipObject() {
+  const s=state.session; if(!s||s.done) return;
+  const obj=s.current;
+  s.log.push({name:obj.n,cat:obj.c,skipped:true});
+  state.history.unshift({name:obj.n,cat:obj.c,skipped:true,ts:Date.now()});
+  if(state.history.length>50) state.history.pop();
+  s.current=pickRandom(OBJECTS[s.catId],obj.n);
+  s.remaining=s.secs;
+  clearInterval(timerInterval); s.running=false;
+  saveState(); renderSession(); startTimer();
+}
+
+function endSession() {
+  clearInterval(timerInterval);
+  if(!state.session) return;
+  state.session.done=true;
+  saveState(); showView('end');
+}
+
+// ── VIEWS ──
+function showView(v) {
+  if(v!=='session'&&v!=='end') { clearInterval(timerInterval); if(v!=='practice') state.session=null; }
+  state.view=v; render(); window.scrollTo(0,0);
+}
+
+function formatTime(secs) {
+  return secs<60?`${secs}s`:secs<3600?`${Math.round(secs/60)} min`:`${Math.round(secs/3600)}h`;
+}
+
+function render() {
+  const v=state.view;
+  const titles={home:'DailyDraw',practice:'Practice',stats:'Progress',setup:'New session',session:'Drawing now',end:'Session done!'};
+  document.getElementById('headerTitle').textContent=titles[v]||'DailyDraw';
+  const cat=state.session?CATS.find(c=>c.id===state.session.catId):null;
+  document.getElementById('headerSub').textContent=
+    v==='home'?'with Penne ✏':
+    v==='stats'?`${state.totalDrawn} objects drawn`:
+    v==='setup'?'pick category + time':
+    v==='session'?`${cat?.label||''} · ${state.session?formatTime(state.session.secs):''}`:
+    v==='end'?'great work today!':'';
+  document.getElementById('headerStreak').textContent=state.streak;
+  const main=document.getElementById('mainContent');
+  if(v==='session') { renderSession(); }
+  else if(v==='home') main.innerHTML=renderHome();
+  else if(v==='practice') main.innerHTML=renderPractice();
+  else if(v==='stats') main.innerHTML=renderStats();
+  else if(v==='end') main.innerHTML=renderEnd();
+  document.querySelectorAll('.bn').forEach(el=>{
+    const bv=el.dataset.view;
+    el.classList.toggle('on',
+      bv===v || (bv==='practice'&&(v==='setup'||v==='session'||v==='end'))
+    );
+  });
+}
+
+// ── HOME ──
+function renderHome() {
+  const kept=state.todayDrawn>=3;
+  return `
+  <div class="streak-band">
+    <div class="sb-left">
+      <div class="sb-label">current streak</div>
+      <div class="sb-num">${state.streak} <span class="fire">🔥</span></div>
+      <div class="sb-sub">day streak</div>
+    </div>
+    <img src="${PENNE.p_wave}" class="sb-penne" loading="eager"/>
+  </div>
+  <div class="sec-hd">your stats</div>
+  <div class="stat-grid">
+    <div class="stat-card" style="background:#FFF0F3;border-color:rgba(255,107,138,0.15)">
+      <div class="sv" style="color:#FF6B8A">${state.totalDrawn}</div><div class="sl">total drawn</div>
+    </div>
+    <div class="stat-card" style="background:#EDF7F7;border-color:rgba(92,196,196,0.2)">
+      <div class="sv" style="color:#3AACAC">${state.todayDrawn}</div><div class="sl">today</div>
+    </div>
+    <div class="stat-card" style="background:#F8EFF8;border-color:rgba(195,135,194,0.2)">
+      <div class="sv" style="color:#C387C2">${state.bestStreak}</div><div class="sl">best streak</div>
+    </div>
+    <div class="stat-card" style="background:#EDF4FC;border-color:rgba(94,168,230,0.2)">
+      <div class="sv" style="color:#5EA8E6">${state.history.filter(h=>!h.skipped).length}</div>
+      <div class="sl">total sessions</div>
+    </div>
+  </div>
+  <button class="btn-primary" onclick="showView('practice')">Start practicing</button>
+  <div class="nudge-card">
+    <img src="${PENNE.p_shy}" class="nudge-penne" loading="lazy"/>
+    <div>
+      <div class="nudge-title">to keep your streak</div>
+      <div class="nudge-body">Draw at least 3 objects today</div>
+      ${kept
+        ?`<div class="nudge-good">✓ Streak safe today!</div>`
+        :`<div class="nudge-warn">${state.todayDrawn} drawn · ${3-state.todayDrawn} more to go</div>`
+      }
+    </div>
+  </div>`;
+}
+
+// ── PRACTICE ──
+let setupCat='objects', setupSecs=120;
+
+function renderPractice() {
+  return `
+  <div class="sec-hd" style="margin-top:4px">what to draw</div>
+  <div class="cat-grid">
+    ${CATS.map(c=>`
+      <div class="cat-tile${setupCat===c.id?' sel':''}" onclick="selectCat('${c.id}')"
+        style="${setupCat===c.id?`border-color:${c.color};background:${c.bg}`:''}">
+        <span class="icon" style="width:26px;height:26px;color:${setupCat===c.id?c.color:'#8A5A3A'}">${ICONS[c.icon]}</span>
+        <div class="cat-name" style="${setupCat===c.id?`color:${c.color}`:''}">
+          ${c.label}</div>
+        <div class="cat-count">${c.count} subjects</div>
+      </div>`).join('')}
+  </div>
+  <div class="sec-hd">time limit</div>
+  <div class="time-chips">
+    ${TIMES.map(t=>`<div class="chip${setupSecs===t.secs?' on':''}" onclick="selectTime(${t.secs})">${t.label}</div>`).join('')}
+    <div class="chip${![30,60,120,300,600].includes(setupSecs)?' on':''}" onclick="openCustomTime()">custom</div>
+  </div>
+  <div class="slider-row">
+    <span class="s-edge">30s</span>
+    <input type="range" min="0" max="100" style="flex:1;accent-color:#FF6B8A"
+      value="${Math.round((Math.log(setupSecs/30)/Math.log(7200))*100)}"
+      oninput="sliderChange(this.value)">
+    <span class="s-val">${formatTime(setupSecs)}</span>
+    <span class="s-edge">60m</span>
+  </div>
+  <button class="btn-primary" onclick="startSession('${setupCat}',${setupSecs})">Let's draw</button>`;
+}
+
+function selectCat(id){setupCat=id;render();}
+function selectTime(s){setupSecs=s;render();}
+function sliderChange(v){
+  setupSecs=Math.round(30*Math.pow(7200/30,v/100));
+  setupSecs=Math.max(30,Math.min(3600,setupSecs));
+  const el=document.querySelector('.s-val');
+  if(el) el.textContent=formatTime(setupSecs);
+}
+function openCustomTime(){
+  const val=prompt('Enter time in seconds (30–3600):');
+  const n=parseInt(val);
+  if(n>=30&&n<=3600){setupSecs=n;render();}
+}
+
+// ── SESSION ──
+function renderSession() {
+  const s=state.session; if(!s) return;
+  const main=document.getElementById('mainContent');
+  const m=Math.floor(s.remaining/60),sec=s.remaining%60;
+  const timeStr=m>0?`${m}:${String(sec).padStart(2,'0')}`:`0:${String(sec).padStart(2,'0')}`;
+  const circ=2*Math.PI*38;
+  const timeUp=s.remaining===0&&!s.done;
+  const cat=CATS.find(c=>c.id===s.catId);
+  const timerColor=s.remaining<=10&&s.remaining>0?'#FF6B8A':'var(--txt)';
+
+  main.innerHTML=`
+  <div class="subject-card" style="background:${cat?.color||'#FF6B8A'}">
+    <div class="subj-label">Your subject</div>
+    <div class="subj-name">${s.current.n}</div>
+    <div class="subj-cat">${s.current.c}</div>
+  </div>
+  <div class="session-mid">
+    <img src="${timeUp?PENNE.p_clock:PENNE.p_draw}" class="session-penne" loading="eager"/>
+    <div class="timer-wrap" id="timerWrap" style="color:${timerColor}">
+      <svg width="92" height="92" viewBox="0 0 88 88">
+        <circle cx="44" cy="44" r="38" fill="none" stroke="var(--bdr2)" stroke-width="5"/>
+        <circle id="timerRing" cx="44" cy="44" r="38" fill="none" stroke="${cat?.color||'#FF6B8A'}"
+          stroke-width="5" stroke-linecap="round"
+          stroke-dasharray="${circ.toFixed(1)}"
+          stroke-dashoffset="${(circ*(1-s.remaining/s.secs)).toFixed(1)}"
+          transform="rotate(-90 44 44)" style="transition:stroke-dashoffset .9s linear"/>
+      </svg>
+      <div class="timer-center">
+        <div class="timer-num" id="timerDisplay">${timeUp?'Time!':timeStr}</div>
+        <div class="timer-sub">${timeUp?'done?':s.running?'remaining':'tap ▶'}</div>
+      </div>
+    </div>
+  </div>
+  <div class="count-row">
+    <div class="count-card"><div class="cv" style="color:#FF6B8A">${state.todayDrawn}</div><div class="cl">today</div></div>
+    <div class="count-card"><div class="cv" style="color:#5CC4C4">${Math.max(0,3-state.todayDrawn)}</div><div class="cl">for streak</div></div>
+    <div class="count-card"><div class="cv" style="color:#C387C2">${s.sessionDrawn}</div><div class="cl">session</div></div>
+  </div>
+  <div class="session-btns">
+    <button class="btn-secondary" onclick="skipObject()">
+      ${icon('skip',14,'#6B3E22')} Skip
+    </button>
+    <button class="btn-primary" style="margin-bottom:0" onclick="markDone()">
+      ${icon('check',14,'white')} Done
+    </button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+    ${s.running
+      ?`<button class="btn-ghost" onclick="pauseTimer()">⏸ Pause</button>`
+      :`<button class="btn-ghost" onclick="startTimer()">▶ ${s.remaining===s.secs?'Start':'Resume'}</button>`
+    }
+    <button class="btn-ghost" onclick="endSession()">End session</button>
+  </div>`;
+}
+
+// ── END ──
+function renderEnd() {
+  const s=state.session; if(!s) return '';
+  const cat=CATS.find(c=>c.id===s.catId);
+  const kept=state.todayDrawn>=3;
+  const drawn=s.log.filter(l=>!l.skipped);
+  return `
+  <div class="end-screen">
+    <img src="${kept?PENNE.p_excited:PENNE.p_thumbs}" class="end-penne" loading="eager"/>
+    <div class="end-title">${kept?'Great work today!':'Good effort!'}</div>
+    <div class="end-sub">You drew ${s.sessionDrawn} objects</div>
+    ${kept
+      ?`<div class="streak-badge">🔥 Streak kept — ${state.streak} days!</div>`
+      :state.todayDrawn>0
+        ?`<div class="streak-badge" style="background:var(--bg2);color:var(--txt2)">${state.todayDrawn}/3 drawn · ${3-state.todayDrawn} more to go</div>`
+        :''
+    }
+    <div class="end-stats">
+      <div class="end-stat" style="background:#FFF0F3;border-color:rgba(255,107,138,0.15)">
+        <div class="esv" style="color:#FF6B8A">${s.sessionDrawn}</div><div class="esl">drawn</div>
+      </div>
+      <div class="end-stat" style="background:#EDF7F7;border-color:rgba(92,196,196,0.2)">
+        <div class="esv" style="color:#3AACAC">${formatTime(s.secs)}</div><div class="esl">per object</div>
+      </div>
+      <div class="end-stat" style="background:#F8EFF8;border-color:rgba(195,135,194,0.2)">
+        <div class="esv" style="color:#C387C2;font-size:12px">${cat?.label||''}</div><div class="esl">category</div>
+      </div>
+    </div>
+    ${drawn.length>0?`
+    <div class="drew-section">
+      <div class="drew-lbl">you drew</div>
+      <div class="drew-chips">
+        ${drawn.slice(0,6).map(d=>`<div class="drew-chip">${d.name}</div>`).join('')}
+        ${drawn.length>6?`<div class="drew-chip drew-more">+${drawn.length-6} more</div>`:''}
+      </div>
+    </div>`:''}
+    <button class="btn-primary" onclick="showView('practice')">Practice again</button>
+    <button class="btn-ghost" style="margin-top:8px" onclick="showView('home')">Back to home</button>
+  </div>`;
+}
+
+// ── STATS ──
+function renderStats() {
+  const recent=state.history.slice(0,10);
+  const catCounts={};
+  state.history.filter(h=>!h.skipped).forEach(h=>{ catCounts[h.cat]=(catCounts[h.cat]||0)+1; });
+  const topCat=Object.entries(catCounts).sort((a,b)=>b[1]-a[1])[0];
+  return `
+  <div class="streak-band" style="margin-bottom:12px">
+    <div class="sb-left">
+      <div class="sb-label">current streak</div>
+      <div class="sb-num">${state.streak} <span class="fire">🔥</span></div>
+      <div class="sb-sub">best: ${state.bestStreak} days</div>
+    </div>
+    <img src="${PENNE.p_excited}" class="sb-penne" loading="lazy"/>
+  </div>
+  <div class="stat-grid" style="margin-bottom:12px">
+    <div class="stat-card" style="background:#FFF0F3;border-color:rgba(255,107,138,0.15)">
+      <div class="sv" style="color:#FF6B8A">${state.totalDrawn}</div><div class="sl">total drawn</div>
+    </div>
+    <div class="stat-card" style="background:#EDF7F7;border-color:rgba(92,196,196,0.2)">
+      <div class="sv" style="color:#3AACAC">${state.todayDrawn}</div><div class="sl">today</div>
+    </div>
+    <div class="stat-card" style="background:#F8EFF8;border-color:rgba(195,135,194,0.2)">
+      <div class="sv" style="color:#C387C2;font-size:13px">${topCat?topCat[0]:'—'}</div><div class="sl">top category</div>
+    </div>
+    <div class="stat-card" style="background:#EDF4FC;border-color:rgba(94,168,230,0.2)">
+      <div class="sv" style="color:#5EA8E6">${state.bestStreak}</div><div class="sl">best streak</div>
+    </div>
+  </div>
+  <div class="sec-hd">recent sketches</div>
+  ${recent.length===0
+    ?`<div style="text-align:center;padding:24px;color:var(--txt3);font-size:13px">Nothing yet — start practicing!</div>`
+    :recent.map(h=>`
+      <div class="history-row">
+        <div class="h-dot" style="background:${h.skipped?'#D2D8D9':'#FF6B8A'}"></div>
+        <div class="h-name">${h.name}</div>
+        <div class="h-cat">${h.cat}</div>
+        <div class="h-status ${h.skipped?'':'h-done'}">${h.skipped?'skipped':'✓ drawn'}</div>
+      </div>`).join('')
+  }
+  <div class="sec-hd" style="margin-top:14px">by category</div>
+  ${CATS.map(c=>{
+    const n=state.history.filter(h=>!h.skipped&&OBJECTS[c.id]?.some(o=>o.n===h.name)).length;
+    const pct=state.totalDrawn>0?Math.round((n/state.totalDrawn)*100):0;
+    return `<div class="cat-stat-row">
+      <span class="icon" style="width:16px;height:16px;color:${c.color};flex-shrink:0">${ICONS[c.icon]}</span>
+      <div style="font-size:11px;font-weight:600;color:var(--txt2);width:56px;flex-shrink:0">${c.label}</div>
+      <div class="cat-bar-wrap"><div class="cat-bar-fill" style="width:${pct}%;background:${c.color}"></div></div>
+      <div style="font-size:10px;color:var(--txt3);width:24px;text-align:right;flex-shrink:0">${n}</div>
+    </div>`;
+  }).join('')}`;
+}
+
+// ── INIT ──
+loadState();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+render();
+
+</script>
+</body>
+</html>

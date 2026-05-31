@@ -273,34 +273,75 @@ body{
   display:inline-block;padding:4px 12px;border-radius:20px;
 }
 
-/* ── SESSION MID ── */
-.sess-mid{
+/* ── SESSION PENNE+TIMER ROW ── */
+.sess-bottom-row{
   display:flex;align-items:center;gap:14px;
-  margin-bottom:14px;
+  margin-bottom:10px;
 }
-.sess-penne{width:88px;height:88px;object-fit:contain;flex-shrink:0}
-.timer-box{
+.sess-penne{
+  width:120px;height:120px;
+  object-fit:contain;flex-shrink:0;
+}
+.sess-start-btn{
   flex:1;
   background:var(--card);
-  border:1px solid var(--border);
+  border:1px solid var(--border2);
   border-radius:var(--radius);
-  padding:16px;
-  display:flex;align-items:center;justify-content:center;
-  position:relative;
-  min-height:88px;
+  padding:20px 14px;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:6px;
+  cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  font-size:15px;font-weight:600;
+  color:var(--text2);
+  transition:background .15s;
+  min-height:120px;
 }
-.timer-wrap{position:relative;width:88px;height:88px}
-.timer-center{
+.sess-start-btn:active{background:var(--bg2)}
+.sess-start-btn .start-icon{font-size:28px;line-height:1}
+
+/* ── TIMER OVERLAY ── */
+.timer-overlay{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,0.88);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:0;
+  opacity:0;pointer-events:none;
+  transition:opacity .2s;
+}
+.timer-overlay.show{opacity:1;pointer-events:all}
+.ov-ring-wrap{
+  position:relative;
+  width:220px;height:220px;
+  margin-bottom:48px;
+}
+.ov-ring-wrap svg{transform:rotate(-90deg);width:100%;height:100%}
+.ov-ring-center{
   position:absolute;inset:0;
   display:flex;flex-direction:column;
   align-items:center;justify-content:center;
 }
-.timer-num{
+.ov-time{
   font-family:'Syne',sans-serif;
-  font-size:22px;font-weight:800;line-height:1;
-  color:var(--text);
+  font-size:52px;font-weight:800;
+  color:#fff;line-height:1;
+  letter-spacing:-.02em;
 }
-.timer-sub{font-size:10px;color:var(--text3);margin-top:3px}
+.ov-sub{font-size:13px;color:rgba(255,255,255,0.5);margin-top:6px}
+.ov-close{
+  width:52px;height:52px;border-radius:50%;
+  background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;color:rgba(255,255,255,0.8);
+  cursor:pointer;font-family:'DM Sans',sans-serif;
+  transition:background .15s;
+}
+.ov-close:active{background:rgba(255,255,255,0.22)}
 
 /* ── COUNT ROW ── */
 .count-row{display:flex;gap:10px;margin-bottom:14px}
@@ -411,6 +452,23 @@ body{
   <button class="bn-item" id="bnStats" onclick="go('stats')">
     <div class="bn-icon">📊</div>Stats
   </button>
+</div>
+
+<div class="timer-overlay" id="timerOverlay">
+  <div class="ov-ring-wrap">
+    <svg viewBox="0 0 220 220" width="220" height="220">
+      <circle cx="110" cy="110" r="96" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="8"/>
+      <circle id="ovRing" cx="110" cy="110" r="96" fill="none"
+        stroke="#FF8894" stroke-width="8" stroke-linecap="round"
+        stroke-dasharray="603" stroke-dashoffset="0"
+        style="transition:stroke-dashoffset 0.9s linear"/>
+    </svg>
+    <div class="ov-ring-center">
+      <div class="ov-time" id="ovTime">0:00</div>
+      <div class="ov-sub" id="ovSub">remaining</div>
+    </div>
+  </div>
+  <div class="ov-close" onclick="closeTimerOverlay()">✕</div>
 </div>
 
 <script>
@@ -580,32 +638,52 @@ function checkStreak(){
 // ── TIMER ──
 let TI=null;
 
-function startTimer(){
-  const s=ST.session;if(!s||s.done)return;
-  s.running=true;clearInterval(TI);
+function openTimerOverlay(){
+  const s=ST.session; if(!s||s.done) return;
+  s.running=true;
+  document.getElementById('timerOverlay').classList.add('show');
+  clearInterval(TI);
+  updateOverlay();
   TI=setInterval(()=>{
     if(!ST.session||ST.session.done){clearInterval(TI);return;}
     ST.session.remaining--;
     if(ST.session.remaining<=0){
-      ST.session.remaining=0;clearInterval(TI);ST.session.running=false;
+      ST.session.remaining=0;
+      clearInterval(TI);ST.session.running=false;
       if(navigator.vibrate)navigator.vibrate([200,100,200]);
-      renderSession();return;
+      updateOverlay();
+      return;
     }
-    updateTimer();
+    updateOverlay();
   },1000);
+}
+
+function closeTimerOverlay(){
+  clearInterval(TI);
+  if(ST.session){ST.session.running=false;}
+  document.getElementById('timerOverlay').classList.remove('show');
   renderSession();
 }
-function pauseTimer(){clearInterval(TI);ST.session.running=false;renderSession();}
 
-function updateTimer(){
-  const s=ST.session;if(!s)return;
-  const m=Math.floor(s.remaining/60),sec=s.remaining%60;
-  const el=document.getElementById('tD');
-  if(el)el.textContent=`${m}:${String(sec).padStart(2,'0')}`;
-  const ring=document.getElementById('tR');
-  if(ring){const c=2*Math.PI*36;ring.style.strokeDashoffset=(c*(1-s.remaining/s.secs)).toFixed(1);}
-  const tw=document.getElementById('tN');
-  if(tw)tw.style.color=s.remaining<=10&&s.remaining>0?'#FF8894':'var(--text)';
+function updateOverlay(){
+  const s=ST.session; if(!s) return;
+  const m=Math.floor(s.remaining/60), sec=s.remaining%60;
+  const tStr=`${m}:${String(sec).padStart(2,'0')}`;
+  const timeUp=s.remaining===0;
+  const el=document.getElementById('ovTime');
+  if(el) el.textContent=timeUp?'Done!':tStr;
+  const sub=document.getElementById('ovSub');
+  if(sub) sub.textContent=timeUp?'tap × to continue':'remaining';
+  const ring=document.getElementById('ovRing');
+  if(ring){
+    const circ=2*Math.PI*96;
+    const cat=CATS.find(c=>c.id===s.catId);
+    ring.style.strokeDasharray=circ.toFixed(1);
+    ring.style.strokeDashoffset=(circ*(1-s.remaining/s.secs)).toFixed(1);
+    ring.style.stroke=cat?.color||'#FF8894';
+  }
+  const ov=document.getElementById('ovTime');
+  if(ov) ov.style.color=timeUp?'#FF8894':'#fff';
 }
 
 // ── SESSION ──
@@ -630,7 +708,8 @@ function markSketched(){
   checkStreak();
   s.current=pick(s.catId,obj.n);
   s.remaining=s.secs;clearInterval(TI);s.running=false;
-  save();renderSession();startTimer();
+  document.getElementById('timerOverlay').classList.remove('show');
+  save();renderSession();
 }
 function skipObj(){
   const s=ST.session;if(!s||s.done)return;
@@ -640,11 +719,13 @@ function skipObj(){
   if(ST.history.length>50)ST.history.pop();
   s.current=pick(s.catId,obj.n);
   s.remaining=s.secs;clearInterval(TI);s.running=false;
-  save();renderSession();startTimer();
+  document.getElementById('timerOverlay').classList.remove('show');
+  save();renderSession();
 }
 function endSession(){
   clearInterval(TI);if(!ST.session)return;
   ST.session.done=true;
+  document.getElementById('timerOverlay').classList.remove('show');
   if(!ST.lastSessionDay||ST.lastSessionDay!==today()){ST.sessionDays++;ST.lastSessionDay=today();}
   save();go('end');
 }
@@ -761,42 +842,9 @@ function selTime(s){setupSecs=s;render();}
 function renderSession(){
   const s=ST.session;if(!s)return;
   const mc=document.getElementById('mainContent');
-  const m=Math.floor(s.remaining/60),sec=s.remaining%60;
-  const tStr=`${m}:${String(sec).padStart(2,'0')}`;
-  const circ=2*Math.PI*36;
-  const off=(circ*(1-s.remaining/s.secs)).toFixed(1);
-  const timeUp=s.remaining===0&&!s.done;
   const cat=CATS.find(c=>c.id===s.catId);
-  const tCol=s.remaining<=10&&s.remaining>0?'#FF8894':'var(--text)';
 
   mc.innerHTML=`
-  <div class="subject-card" style="background:${cat.color}">
-    <div class="sc-eyebrow">Your subject</div>
-    <div class="sc-name pop-in">${s.current.n}</div>
-    <span class="sc-cat">${s.current.c}</span>
-  </div>
-
-  <div class="sess-mid">
-    <img src="${timeUp?P.clock:P.draw}" class="sess-penne" alt="Penne"/>
-    <div class="timer-box">
-      <div class="timer-wrap">
-        <svg width="88" height="88" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r="36" fill="none" stroke="var(--border2)" stroke-width="5"/>
-          <circle id="tR" cx="40" cy="40" r="36" fill="none"
-            stroke="${cat.color}" stroke-width="5" stroke-linecap="round"
-            stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off}"
-            transform="rotate(-90 40 40)" style="transition:stroke-dashoffset .9s linear"/>
-        </svg>
-        <div class="timer-center">
-          <div class="timer-num" id="tN" style="color:${tCol}">
-            <span id="tD">${timeUp?'Done!':tStr}</span>
-          </div>
-          <div class="timer-sub">${timeUp?'tap sketched':s.running?'left':'tap ▶'}</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="count-row">
     <div class="count-card">
       <div class="cv" style="color:#FF8894">${ST.todaySketched}</div>
@@ -812,17 +860,26 @@ function renderSession(){
     </div>
   </div>
 
-  <div class="sess-btns">
+  <div class="subject-card" style="background:${cat.color}">
+    <div class="sc-eyebrow">Your subject</div>
+    <div class="sc-name pop-in">${s.current.n}</div>
+    <span class="sc-cat">${s.current.c}</span>
+  </div>
+
+  <div class="sess-btns" style="margin-bottom:12px">
     <button class="btn-secondary" onclick="skipObj()">Skip</button>
     <button class="btn-primary" style="margin-bottom:0;flex:1" onclick="markSketched()">✓ Sketched</button>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-    ${s.running
-      ?`<button class="btn-ghost" onclick="pauseTimer()">⏸ Pause</button>`
-      :`<button class="btn-ghost" onclick="startTimer()">▶ ${s.remaining===s.secs?'Start':'Resume'}</button>`
-    }
-    <button class="btn-ghost" onclick="endSession()">End session</button>
-  </div>`;
+
+  <div class="sess-bottom-row">
+    <img src="${P.draw}" class="sess-penne" alt="Penne drawing"/>
+    <button class="sess-start-btn" onclick="openTimerOverlay()">
+      <span class="start-icon">▶</span>
+      Start timer
+    </button>
+  </div>
+
+  <button class="btn-ghost" style="width:100%" onclick="endSession()">End session</button>`;
 }
 
 // ── END ──
